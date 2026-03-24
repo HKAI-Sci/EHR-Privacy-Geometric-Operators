@@ -199,19 +199,6 @@ python run_privacy_protocol.py \
 ```
 
 ---
-
-## Privacy Evaluation Protocol
-
-The protocol evaluates de-identified data under three **leakage levels** and four **attack families**:
-
-### Leakage Levels
-
-| Level | Attacker's Knowledge |
-|---|---|
-| **L0** | Perturbed outputs only — no raw data access |
-| **L1** | ~0.01% of (raw, perturbed) pairs leaked |
-| **L2** | ~20% of (raw, perturbed) pairs — strong insider |
-
 ### Attack Families
 
 | Attack | Goal | Random Baseline |
