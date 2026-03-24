@@ -271,18 +271,6 @@ python run_privacy_protocol.py \
   --seed 42
 ```
 
----
-<<<<<<< HEAD
-### Attack Families
-
-| Attack | Goal | Random Baseline |
-|---|---|---|
-| **A** — Reconstruction | Recover original time series from perturbed output | R² = 0 |
-| **B** — Record Linkage | Re-link perturbed records to original patients | Re-id@1 = 1/m |
-| **C** — Membership Inference | Determine if a patient was in the dataset | AUC = 0.5 |
-| **D** — Attribute Inference | Infer sensitive attributes (e.g., max HR, above-p90 flag) | R² = 0 |
-=======
-
 
 
 ## License
