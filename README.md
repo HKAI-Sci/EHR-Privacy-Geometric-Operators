@@ -286,22 +286,7 @@ python run_privacy_protocol.py \
 | **D** — Attribute Inference | Infer sensitive attributes (e.g., max HR, above-p90 flag) | R² = 0 |
 =======
 
-## Citation
 
-If you use this work, please cite:
-
-```bibtex
-@techreport{wang2025ehr,
-  title   = {Privacy-Preserving EHR Transformation with Mathematical Guarantees: A Human--AI Co-Designed Solution},
-  author  = {Wang, Maolin and Bao, Beining and Yuan, Gan and Chen, Hongyu and Zhao, Bingkun and Kan, Baoshuo and Xu, Jiming and Shi, Qi and Zhao, Yinggong and Wang, Yao and Ma, Wei-Ying and Yan, Jun},
-  institution = {Hong Kong Institute of AI for Science (HKAI-Sci), City University of Hong Kong},
-  year    = {2025},
-  note    = {Toward Making Clinical Data Available and Visible}
-}
-```
->>>>>>> 04e707c (Rewrite README: align with paper narrative (Human-AI co-design, geometric foundation, EHR-Privacy-Agent system, evaluation results))
-
----
 
 ## License
 
