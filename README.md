@@ -275,4 +275,4 @@ python run_privacy_protocol.py \
 
 ## License
 
-MIT © 2025 HKAI-Sci, City University of Hong Kong
+MIT © 2026 HKAI-Sci, City University of Hong Kong
