@@ -9,9 +9,6 @@
 [![CPU Only](https://img.shields.io/badge/compute-CPU--only-green.svg)](#)
 [![EHR](https://img.shields.io/badge/domain-Clinical%20EHR-red.svg)](#)
 
-*Maolin Wang, Beining Bao, Gan Yuan, Hongyu Chen, Bingkun Zhao, Baoshuo Kan, Jiming Xu, Qi Shi, Yinggong Zhao, Yao Wang, Wei-Ying Ma, Jun Yan*
-
-HKAI-Sci · City University of Hong Kong · YIDU TECH
 
 </div>
 
