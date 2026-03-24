@@ -1,79 +1,168 @@
 <div align="center">
 
-# 🏥 EHR Privacy Geometric Operators
+# 🏥 Privacy-Preserving EHR Transformation with Mathematical Guarantees
 
-**Privacy-preserving transformation of EHR time series via geometric operators on the mean–variance manifold.**
+**A Human–AI Co-Designed Solution for Making Clinical Data Available and Visible**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![CPU Only](https://img.shields.io/badge/compute-CPU--only-green.svg)](#)
 [![EHR](https://img.shields.io/badge/domain-Clinical%20EHR-red.svg)](#)
 
+*Maolin Wang, Beining Bao, Gan Yuan, Hongyu Chen, Bingkun Zhao, Baoshuo Kan, Jiming Xu, Qi Shi, Yinggong Zhao, Yao Wang, Wei-Ying Ma, Jun Yan*
+
+HKAI-Sci · City University of Hong Kong · YIDU TECH
+
 </div>
 
 ---
 
-## What is this?
+## Problem
 
-EHR data rarely leaves the hospital — yet clinical AI teams need to share, explore, and model it. This framework provides **geometric operators** that transform EHR time series to be:
+Electronic health records (EHRs) are essential for clinical AI, but **models can move — data cannot**. Regulatory, ethical, and governance constraints keep high-quality clinical data locked inside hospital intranets, creating persistent data silos.
 
-- ✅ **Visible** — still looks like real clinical data; histograms, correlations, and temporal patterns are preserved
-- ✅ **Usable** — downstream models (mortality, LOS, readmission) lose < 1–2% AUROC
-- ✅ **Hard to reconstruct** — pointwise inversion is substantially degraded, especially with Q-mixing
+Existing privacy-preserving methods (MPC, HE, DP, federated learning) make data **usable but invisible**: protected data can be computed on, but clinicians and researchers cannot directly inspect cohort-level distributions, perform exploratory data analysis (EDA), or visually validate temporal patterns — activities that are central to real-world clinical research workflows.
 
-All operations run **CPU-only**, with no long-term shared key, making nightly hospital ETL deployment practical.
+**This framework bridges the gap**: it produces transformed numeric views that preserve medical semantics and major statistical properties, while provably breaking linkage to protected patient-level attributes under a clearly specified threat model.
+
+---
+
+## Approach
+
+### Human–AI Co-Design with SciencePal
+
+Rather than letting an AI agent use high-compute tools, we ask it to **design low-compute tools**. The AI role is played by **SciencePal**, which explored the space of possible operators under human-specified constraints. Human researchers define the problem, validate every claim, and conduct all attacks.
+
+The co-design protocol proceeds in five iterative steps:
+
+1. **Humans specify constraints** C1–C4 and threat model C5
+2. **SciencePal searches literature** — finds no existing operator satisfying all constraints simultaneously
+3. **SciencePal proposes candidates** T1, T2, T3
+4. **Humans prove properties and attack** — keep T1/T2, reject T3 (negative case)
+5. **Co-design Q-mix extension** — observing residual reconstruction risk, humans and SciencePal design per-stay orthogonal mixing
+
+### Geometric Foundation: The Mean–Variance Manifold
+
+All operators operate in **z-score space** on the manifold $\mathcal{M}(0,1) = \{z \in \mathbb{R}^n : \mu(z) = 0, \sigma^2(z) = 1\}$ — the intersection of a zero-mean hyperplane and a unit-norm sphere. Any transform that starts and ends on this manifold exactly preserves cohort-level means and variances after de-standardization.
+
+A single **unified privacy knob $\alpha$** controls the $\ell_\infty$ perturbation bound in z-score space across all variables, automatically adapting to each variable's intrinsic variability.
+
+---
+
+## Design Constraints
+
+All operators satisfy four hard constraints:
+
+| # | Constraint | What it means |
+|---|---|---|
+| **C1** | Mean & variance preserved | Downstream statistics unaffected, to machine precision |
+| **C2** | Unified $\ell_\infty$ bound $\alpha$ | One privacy knob for all variables — no per-variable tuning |
+| **C3** | Full variability | No "silent" time points — virtually all values are moved |
+| **C4** | $O(n)$ complexity, CPU-only | Runs on existing hospital ETL infrastructure overnight |
+
+### Threat Model (C5)
+
+- **No-key, structure-aware adversary**: knows operator definitions, pseudocode, and public hyperparameters ($\alpha$, window lengths, Q-mix block sizes)
+- No long-term shared cryptographic key; randomness is hospital-internal and ephemeral
+- Three leakage levels: **L0** (output only), **L1** (0.01% paired samples), **L2** (20% paired samples)
 
 ---
 
 ## Core Operators
 
-<table>
-<tr>
-<th>Operator</th>
-<th>Mechanism</th>
-<th>Reconstruction R²<br><small>(HR, α=1.0, L2 attacker)</small></th>
-<th>Utility</th>
-</tr>
-<tr>
-<td><b>T1</b> — Triplet Rotation</td>
-<td>Random orthogonal rotation over local 3-point windows</td>
-<td align="center">~0.83</td>
-<td align="center">⭐⭐⭐⭐⭐</td>
-</tr>
-<tr>
-<td><b>T2</b> — Noise + Projection</td>
-<td>Gaussian noise re-projected onto mean–variance manifold</td>
-<td align="center">~0.97</td>
-<td align="center">⭐⭐⭐⭐⭐</td>
-</tr>
-<tr>
-<td><b>T3</b> — Householder <em>(negative case)</em></td>
-<td>Global reflection in mean-zero subspace</td>
-<td align="center">~0.9999 ❌</td>
-<td align="center">⭐⭐⭐⭐⭐</td>
-</tr>
-<tr>
-<td><b>Q-mix</b> + T1/T2</td>
-<td>Per-stay orthogonal mixing before T1/T2</td>
-<td align="center"><b>~0.000</b> 🔒</td>
-<td align="center">⭐⭐⭐⭐</td>
-</tr>
-</table>
+### T1: Triplet Rotation
+Random orthogonal rotation over local 3-point windows in the mean-zero subspace. Preserves short-range autocorrelation while injecting controlled noise.
 
-> **Q-mix creates a privacy cliff**: at fixed α=1.0, reconstruction R² collapses from ~0.8–0.97 down to ~0 — while downstream LOS prediction AUROC remains stable.
+| Property | Value |
+|---|---|
+| Reconstruction R² (HR, α=1.0, L2) | ~0.82 |
+| Utility (LOS AUROC drop) | < 0.01 |
+
+### T2: Noise + Projection
+Gaussian noise added in standardized space, then re-projected onto $\mathcal{M}(0,1)$ by re-centering and re-scaling. Strong preservation of marginals and multivariate correlation.
+
+| Property | Value |
+|---|---|
+| Reconstruction R² (HR, α=1.0, L2) | ~0.97 |
+| Utility (LOS AUROC drop) | < 0.01 |
+
+### T3: Householder Reflection *(Negative Case)*
+Global reflection in the mean-zero subspace. Nearly preserves all statistics but is **highly invertible** (R² ≈ 0.9999) — serves as a cautionary example that satisfying C1–C4 does not guarantee privacy.
+
+### Q-mix + T1/T2: The Privacy Cliff
+Per-stay orthogonal mixing applied **before** T1/T2. The adversary knows the algorithm but not the per-stay matrix realization.
+
+| Metric | Without Q-mix | With Q-mix |
+|---|---|---|
+| Reconstruction R² (HR, α=1.0) | 0.83–0.97 | **≈ 0.0** 🔒 |
+| Attribute inference R² (max HR) | 0.92–0.98 | 0.08–0.11 |
+| LOS AUROC change | — | ±0.01 |
+| Shape utility (1 − KS) | — | 0.93+ |
+
+> **Q-mix creates a qualitative privacy step at fixed $\alpha$**: reconstruction collapses to baseline while downstream tasks remain stable.
 
 ---
 
-## Design Principles
+## System: EHR-Privacy-Agent
 
-All operators operate in z-score space and satisfy four hard constraints:
+The framework is implemented as an **in-hospital nightly pipeline** with a three-layer architecture:
 
-| # | Constraint | What it means |
-|---|---|---|
-| C1 | Mean & variance preserved | Downstream statistics unaffected, to machine precision |
-| C2 | Unified ℓ∞ bound α | One privacy knob for all variables — no per-variable tuning |
-| C3 | Full variability | No "silent" time points — virtually all values are moved |
-| C4 | O(n) complexity, CPU-only | Runs on existing hospital ETL infrastructure overnight |
+```
+┌─────────────────────────────────────────────────────┐
+│  Skill Layer (YAML)                                 │
+│  ┌──────────────────┐  ┌──────────────────────────┐ │
+│  │ In-hospital QA   │  │ Export (strong privacy)  │ │
+│  │ α=0.5, no Q-mix  │  │ α=1.0, Q-mix on HR/Gluc │ │
+│  └──────────────────┘  └──────────────────────────┘ │
+├─────────────────────────────────────────────────────┤
+│  Module Layer                                        │
+│  ColumnTransform · CrossColumn · TemporalSlicing     │
+├─────────────────────────────────────────────────────┤
+│  Operator Layer                                      │
+│  T1 (triplet rotation) · T2 (noise + projection)    │
+│  T3 (Householder) · Q-mix (per-stay orthogonal)     │
+├─────────────────────────────────────────────────────┤
+│  Raw EHR → (never leaves production system)          │
+└─────────────────────────────────────────────────────┘
+```
+
+- **Skills** are version-controlled YAML configs mapping deployment scenarios to operator configurations
+- The **LLM-based agent** interacts only with skill-defined privacy views, never with raw EHR
+- **Automated evaluation** runs the full attack protocol on every skill update, detecting privacy/utility regressions
+
+---
+
+## Evaluation Results
+
+### End-to-End Downstream Tasks (MIMIC-IV ICU)
+
+| Task | Raw AUROC | T1+T2 @α=0.5 | CTGAN Synthetic | Gaussian Noise |
+|---|---|---|---|---|
+| Mortality | — | −0.01 | −0.05–0.08 | −0.03 |
+| LOS (3-class) | ~0.70 | −0.01 | −0.05–0.07 | −0.03–0.05 |
+| Readmission (30d) | ~0.70 | −0.01 | larger drop | −0.03 |
+
+### Privacy Attack Suite
+
+| Attack | Goal | Metric | Q-mix @α=1.0 |
+|---|---|---|---|
+| **A** — Reconstruction | Recover original time series | R² | ≈ 0.0 ✅ |
+| **B** — Record Linkage | Re-link perturbed → original patients | Re-id@1 | ~random baseline ✅ |
+| **C** — Membership Inference | Was this patient in the dataset? | AUC | ~0.5 ✅ |
+| **D** — Attribute Inference | Infer sensitive attributes (max HR, p90 flag) | R² | 0.005–0.11 ✅ |
+
+### Compute Efficiency
+
+The geometric pipeline is **1–2 orders of magnitude faster** than CTGAN training + sampling, runs CPU-only, and is trivially amortized across nightly ETL runs.
+
+---
+
+## Scenario-Based Recommendations
+
+| Scenario | Recommended Config | Privacy | Utility |
+|---|---|---|---|
+| **In-hospital** (research, QA, teaching) | T1+T2 @α=0.5, no Q-mix | Moderate | Near-lossless |
+| **Export** (multi-center, external) | T1+T2 @α=1.0, Q-mix on high-risk vars | Strong | < 0.03 AUROC drop |
 
 ---
 
@@ -109,6 +198,7 @@ EHR-Privacy-Geometric-Operators/
 │   └── P7_qmix_pilot/                  #    Q-mix privacy cliff experiments
 │
 ├── docs/                               # 📄 Documentation
+├── paper/                              # 📑 Technical report PDF
 ├── repo_discovery.py                   #    Runtime path resolution
 ├── requirements.txt
 └── LICENSE
@@ -121,7 +211,7 @@ EHR-Privacy-Geometric-Operators/
 ### Installation
 
 ```bash
-git clone https://github.com/MorinClaw/EHR-Privacy-Geometric-Operators.git
+git clone https://github.com/HKAI-Sci/EHR-Privacy-Geometric-Operators.git
 cd EHR-Privacy-Geometric-Operators
 pip install -r requirements.txt
 ```
@@ -149,45 +239,31 @@ data_preparation/
 
 `repo_discovery.py` resolves all paths at runtime — no hardcoded paths anywhere.
 
----
-
-## Quick Start
-
-### 🎮 Try demos (no real data needed)
+### Quick Start
 
 ```bash
+# 🎮 Try demos (no real data needed)
 cd agent_demo
 python demo_numeric_pipeline.py          # operator pipeline on synthetic data
 python demo_privacy_attacks_synthetic.py # attack simulation on synthetic data
-```
 
-### 🔬 Run experiments
-
-```bash
-# Operator grid (A2)
+# 🔬 Run experiments
 cd experiments/A2_operator_grid/code
 python exp_operators_mimic.py --variables HR Glucose SBP
 
-# Theory validation: verify C1–C4 on real data (A3)
 cd experiments/A3_theory_validation/code
 python exp_a3_sanity_check.py
 
-# Privacy attacks: reconstruction R², multi-run variability (A7)
 cd experiments/A7_privacy_attacks/code
 python exp_a7_privacy.py --variables HR Glucose --K 5
 
-# Q-mix privacy cliff (P7)
 cd experiments/P7_qmix_pilot/code
 python run_qmix_pilot.py --variables HR Glucose --alphas 1.0 --seed 42
 
-# Downstream tasks: LOS / mortality / readmission (B4)
-PYTHONPATH=. python experiments/B4_privacy_utility_tradeoff/code/exp_b4_timeline_icu_tasks.py \
-  --max-stays 500
-```
+cd experiments/B4_privacy_utility_tradeoff/code
+PYTHONPATH=. python exp_b4_timeline_icu_tasks.py --max-stays 500
 
-### 🔍 Full privacy evaluation protocol
-
-```bash
+# 🔍 Full privacy evaluation protocol
 cd privacy_evaluation_protocol/code
 python run_privacy_protocol.py \
   --data-dir ../../data_preparation/experiment_extracted/ts_48h \
@@ -199,6 +275,7 @@ python run_privacy_protocol.py \
 ```
 
 ---
+<<<<<<< HEAD
 ### Attack Families
 
 | Attack | Goal | Random Baseline |
@@ -207,6 +284,22 @@ python run_privacy_protocol.py \
 | **B** — Record Linkage | Re-link perturbed records to original patients | Re-id@1 = 1/m |
 | **C** — Membership Inference | Determine if a patient was in the dataset | AUC = 0.5 |
 | **D** — Attribute Inference | Infer sensitive attributes (e.g., max HR, above-p90 flag) | R² = 0 |
+=======
+
+## Citation
+
+If you use this work, please cite:
+
+```bibtex
+@techreport{wang2025ehr,
+  title   = {Privacy-Preserving EHR Transformation with Mathematical Guarantees: A Human--AI Co-Designed Solution},
+  author  = {Wang, Maolin and Bao, Beining and Yuan, Gan and Chen, Hongyu and Zhao, Bingkun and Kan, Baoshuo and Xu, Jiming and Shi, Qi and Zhao, Yinggong and Wang, Yao and Ma, Wei-Ying and Yan, Jun},
+  institution = {Hong Kong Institute of AI for Science (HKAI-Sci), City University of Hong Kong},
+  year    = {2025},
+  note    = {Toward Making Clinical Data Available and Visible}
+}
+```
+>>>>>>> 04e707c (Rewrite README: align with paper narrative (Human-AI co-design, geometric foundation, EHR-Privacy-Agent system, evaluation results))
 
 ---
 
